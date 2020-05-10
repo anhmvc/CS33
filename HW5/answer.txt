@@ -1,0 +1,11 @@
+Name: Anh Mac
+UID: 905-111-606
+
+12.17
+A. Since there was no function that was used to terminate/reap the thread before the exit(0) function, the program exits after the thread is created, and the body of the thread routine was not executed. This happens because threads terminates implicitly when its top-level thread routine returns, which is what happens in this case before the thread routine is executed.
+B. Replace exit(0) with Pthread_join(tid, NULL) or Pthread_exit(void *thread_return).
+Pthread_join(tid, NULL) forces the main thread to wait for other threads to terminate before terminating itself.
+Pthread_exit(void *thread_return) waits for the peer thread to terminate and then terminates the main thread and the entire process.
+
+12.25
+The function echo_cnt is thread-safe because it uses a mutex to make sure that race conditions don't occur as each thread is executing. However, it is not reentrant since threads share the same mutex.

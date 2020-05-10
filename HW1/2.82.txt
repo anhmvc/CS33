@@ -1,0 +1,49 @@
+2.82
+
+A. (x < y) == (-x > -y)
+   False. if x = TMIN, then -x = TMIN and it cannot be greater than any other
+   integer.
+
+B. ((x + y) << 4 + y - x) == 17 * y + 15 * x
+   (x+y)*2^4 + y - x == 17*y+15*x
+   16*x+16*y+y-x == 17*y+15*x
+   17*y+15*x == 17*y+15*x
+   True, this expression will always yield 1.
+
+C. ~x+~y+1 == ~(x+y)
+   -x = ~x + 1 or ~x = -x - 1
+   -x-1-y-1+1 == -(x+y)-1
+   -x-y-1 == -x-y-1
+   True, this expression will always yield 1.
+
+D. (ux-uy) == -(unsigned) (y-x)
+   -(uy-ux) == -(unsigned) (y-x)
+   (uy-ux) == (unsigned (y-x)
+   uy - ux == uy - ux
+   True, this will always yield 1 because even though one side is performing 
+   unsigned subtraction and the other is performing signed subtraction, the
+   result would still have the same bit patterns and interpret it the same
+   way.
+
+E. ((x>>2) << 2) <= x
+   (x/2^2)*2^2 <= x
+   x <= x
+   True, this will always yield 1 as the LHS will always evaluated to a
+   number that is less than or equal to x. As x is an int and the function
+   is performing arithmetic shifts, the left shift might change some of the
+   bits that were 1s to 0s since the right shift is performed first,
+   resulting in a number that is smaller than x.
+
+F. x % 8 == (x & 7)
+   False, this expression will not yield 1 when x = -1.
+
+G. ((unsigned) -1 / 255 * (x & 255)) >> 24 == (x & 255)
+   True, this will always yield 1. -1/255 will result in 0x01010101. By
+   executing the & operator in (x&255), it will always yield the last 8 bits
+   of the integer as 255 serves like a mask with its bit pattern as 
+   0x000000FF. Multiplying 0x01010101 and the last 8-bits of x padded with 0s
+   in front will yield a bit pattern that repeats the 8-bits of x. So every
+   8-bits in this new integer will be the same as the last 8-bits. Shifting
+   the integer to the right 24 bits will result in the top 8-bits, and as
+   mentioned before it will always equal to the last 8-bits which is (x&255).
+   So this expression will always yield true.

@@ -1,0 +1,10 @@
+2.72
+
+A. The conditional test in the code always succeeds because since the sizeof operator returns a value of type size_t, it is never negative since size_t is an unsigned type. Since size_t is unsigned, the expression will be evaluated as unsigned, hence, it will never be negative and will always be true.
+
+B.
+
+void copy_int(int val, void *buf, int maxbytes) {
+    if (maxbytes - (int) sizeof(val) >= 0)
+	memcpy(buf, (void *) &val, sizeof(val));
+}

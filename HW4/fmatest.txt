@@ -1,0 +1,33 @@
+Name: Anh Mac
+UID: 905-111-606
+
+In the compiling command, the -march=native flag selects the CPU to generate code for at compilation time, so it would generate machine code that is supported by the server lnxsrv10.seas.ucla.edu. This flag will affect the machine code of f1 since f1 calls the built-in function fmaf which runs uniquely on different machines. The -ffp-contract=off flag disables floating-point expression contraction, so this optimization option will cause rounding of the result of the multiplication and adding of the function in the file. fmatest(a,b,c) would return true if any of the 3 arguments == 0 since that would minimize any rounding that could occur to alter the results.
+
+The machine code for the functions f1 and f2 are as follows:
+
+// a in xmm0, b in xmm1, c in xmm2
+// returns (a*b+c)
+f1:
+.LFB3:
+        .cfi_startproc
+        vfmadd132ss     %xmm1, %xmm2, %xmm0	// multiply floating-point value from xmm1 and xmm0, add to xmm2 and stores result in xmm1
+        ret
+        .cfi_endproc
+.LFE3:
+        .size   f1, .-f1
+        .p2align 4,,15
+        .globl  f2
+        .type   f2, @function
+
+f2:
+.LFB4:
+        .cfi_startproc
+        vmulss  %xmm1, %xmm0, %xmm1 // multiply the floating point value in xmm1 by the value in xmm0
+        vaddss  %xmm2, %xmm1, %xmm0 // add the floating point value from xmm0 to xmm1 and store the result in xmm2
+        ret
+        .cfi_endproc
+.LFE4:
+        .size   f2, .-f2
+        .p2align 4,,15
+        .globl  fmatest
+        .type   fmatest, @function
