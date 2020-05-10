@@ -7,7 +7,7 @@ These are my solutions for CS33: Introduction to Computer Organizations at UCLA.
 
 Assignments | Grade
 ------------|-------
-Datalab | 100/100
+Datalab | 33/33
 Pexex Lab | 95/100
 Smashing Lab | 99/100
 Open MP Lab | 100/100
