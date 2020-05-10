@@ -1,0 +1,171 @@
+Name: Anh Mac
+UID: 905-111-606
+
+openMP Lab
+
+1. To extract the files from the provided .tar files, I used the command:
+
+$ tar -zxvf openmplab.tgz
+
+2. I first compile the program normally using:
+
+$ make seq
+
+3. Then I check to make sure that the original file gives the correct output with the command:
+
+$ make check
+
+It outputs:
+gcc -o omp  -O3 -fopenmp filter.c main.c func.c util.c -lm
+cp omp filter
+./filter
+FUNC TIME : 0.679270
+TOTAL TIME : 2.525947
+diff --brief correct.txt output.txt
+
+So the executable runs correctly as expected to.
+
+4. To get the original runtime of the original function, I do: 
+
+$ ./seq
+
+Output:
+FUNC TIME : 0.677503
+TOTAL TIME : 2.364342
+
+5. Compiling the program with GPROF, so I can see which function takes the longest time in the program:
+
+$ make seq GPROF=1
+
+$ gprof seq
+
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 69.66      0.48     0.48       15    32.04    33.18  func1
+ 13.06      0.57     0.09  5177344     0.00     0.00  rand2
+  4.35      0.60     0.03   491520     0.00     0.00  findIndexBin
+  2.90      0.62     0.02        1    20.03    93.04  addSeed
+  2.90      0.64     0.02        1    20.03    20.03  imdilateDisk
+  2.90      0.66     0.02                             filter
+  2.90      0.68     0.02                             sequence
+  1.45      0.69     0.01        2     5.01     5.01  init
+  0.00      0.69     0.00   983042     0.00     0.00  round
+  0.00      0.69     0.00       16     0.00     0.00  dilateMatrix
+  0.00      0.69     0.00       15     0.00     0.00  func2
+  0.00      0.69     0.00       15     0.00     0.00  func3
+  0.00      0.69     0.00       15     0.00     0.00  func4
+  0.00      0.69     0.00       15     0.00     2.00  func5
+  0.00      0.69     0.00       15     0.00     0.00  rand1
+  0.00      0.69     0.00        2     0.00     0.00  get_time
+  0.00      0.69     0.00        1     0.00     0.00  elapsed_time
+  0.00      0.69     0.00        1     0.00     0.00  fillMatrix
+  0.00      0.69     0.00        1     0.00     0.00  func0
+  0.00      0.69     0.00        1     0.00     0.00  getNeighbors
+
+We can see that func1 takes up the most time when running the executable.
+I will go into the func.c file and edit func1 using openMP functions to use parallelized programs and multithreading to speedup the runtime.
+
+6. Before editing the code, I check to see if there's any memory leaks from the original program.
+
+$ make MTRACE=1
+$ ./filter
+$ make checkmem
+
+Output:
+mtrace filter mtrace.out || true
+No memory leaks.
+
+------------------
+Editing the code..
+------------------
+
+- Add #include "omp.h" at the top of the file.
+- Add #pragma omp parallel for all of the for loops in every function
+
+1. Compiling the program with openMP option and GPROF:
+
+$ make omp GPROF=1
+$ ./omp
+
+Output:
+FUNC TIME : 0.325742
+TOTAL TIME : 2.133974
+
+We can see that by editing func1, the program had a speedup of ~2.1x.
+To recall, the original func time was:
+FUNC TIME : 0.679270
+TOTAL TIME : 2.525947
+
+I then edit the rest of the for loops in the other functions to maximize speedup in the program overall. Recompiling and running omp again we get:
+
+Output:
+FUNC TIME : 0.203708
+TOTAL TIME : 1.948938
+
+So, now we have approximately a 3.3x speedup after parallelizing all the programs.
+Make more variables private to each thread, add reduction, set number of threads to 4, the runtime is now:
+
+FUNC TIME : 0.197617
+TOTAL TIME : 1.958714
+
+We have achieved about 3.5x speedup using multithreading with openMP library
+
+Running gprof again to check for the status of which function takes the longest:
+
+$ gprof omp
+
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 78.13      0.64     0.64      122     5.25     5.52  filter
+ 10.99      0.73     0.09  4347043     0.00     0.00  rand2
+  2.44      0.75     0.02   116866     0.00     0.00  findIndexBin
+  2.44      0.77     0.02        1    20.02    20.02  imdilateDisk
+  2.44      0.79     0.02                             sequence
+  1.22      0.80     0.01        2     5.01     5.01  init
+  1.22      0.81     0.01        1    10.01    96.94  addSeed
+  0.61      0.82     0.01   517255     0.00     0.00  round
+  0.61      0.82     0.01        1     5.01     5.01  elapsed_time
+  0.00      0.82     0.00       16     0.00     0.00  dilateMatrix
+  0.00      0.82     0.00       15     0.00     0.00  func1
+  0.00      0.82     0.00       15     0.00     0.00  func2
+  0.00      0.82     0.00       15     0.00     0.00  func3
+  0.00      0.82     0.00       15     0.00     0.00  func4
+  0.00      0.82     0.00       15     0.00     0.00  func5
+  0.00      0.82     0.00       15     0.00     0.00  rand1
+  0.00      0.82     0.00        2     0.00     0.00  get_time
+  0.00      0.82     0.00        1     0.00     0.00  fillMatrix
+  0.00      0.82     0.00        1     0.00     0.00  func0
+  0.00      0.82     0.00        1     0.00     0.00  getNeighbors
+
+We can see that func1-func5 now no longer take most of the time in the runtime of the function, but rather it was mostly the main program filter.
+
+-------------------
+MEMORY LEAKS ISSUES
+-------------------
+
+However, there was some memory leaks issues when trying to compile the program with openMP, that I did not know how to address. 
+I have tried making shared variables private to each thread and other methods, but it seems like it was an issue with the openMP library.
+
+$ make MTRACE=1
+$ ./filter
+$ make checkmem
+
+Memory not freed:
+-----------------
+           Address     Size     Caller
+0x00000000014520d0    0x8a0  at 0x7fe7cf6ed7f9
+0x0000000001452980     0xc0  at 0x7fe7cf6ed7f9
+0x0000000001452a50     0x28  at 0x7fe7cf6ed849
+0x0000000001452a80    0x240  at 0x7fe7cfc1e755
+0x0000000001452cd0    0x240  at 0x7fe7cfc1e755
+0x0000000001452f20    0x240  at 0x7fe7cfc1e755
+
+
+
+

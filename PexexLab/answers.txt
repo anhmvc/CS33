@@ -1,0 +1,14 @@
+Name: Anh Mac
+UID: 905-111-606
+
+1. The instructions in the trace did not produce the correct mathematical result due to the way that Emacs handles integers. Emacs converts every type into ELISPOBJECT, so every integer is represented as 64 bits with the last 2 bits as a tagged pointer to allow the program to know what data type it is accessing. When it is executing arithmetic multiplication, the machine code shifts right two to convert it to a bit representation of the number (however, with only 62-bits). After the multiplication is executed, the value is again shifted left two to make space for the tagged pointers. With the constant left and right shifting, losing information is inevitable. If overflow occurs, the 2 most significant bits will be lost, producing an incorrect product. 
+
+The instructions:
+54dc21	48 c1 ff 02	sar $0x2,%rdi	rdi=4a85d2d0 // arithmetically right shifted the value 2
+54dcfc	48 8d 04 ad 02 00 00 00		lea 0x2(,%rbp,4),%rax	       rax=7fffffff73ab3b42 // shifted the value left
+
+2. The command outputs -2305843009213693952 which is the most negative integer that Emacs can produce. The value is equivalent to -2^61, as the MSB is used as a sign bit, and the 2 LSB are used as a tagged pointer to indicate its data type.
+
+3. The expression provided is equivalent to multiplying the largest integer by itself 4 times. The most positive number in Emacs would be represented as 0x1fffffffffffffff. Multiplying by itself yields 0xc000000000000001, then 0x5fffffffffffffff, then 0x8000000000000001. With Emacs source code, this value will be shifted left 2 to include the tagged pointer, causing us to lose the MSB and yields 1. So when viewing Emacs integers, we only consider the value to be returned as the right-most 62 bits.
+
+4. Adding the -fwrapv option will generate machine code that makes overflow to wrap around. However, as seen in the trace file, function arith_driver already checks for overflow, so it is unnecessary to include the -fwrapv option in the compiling process. It would not run into any runtime or compile-time errors; however, it still will not produce the correct answer as overflow will occur and wrap around.

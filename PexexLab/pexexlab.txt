@@ -1,0 +1,116 @@
+Name: Anh Mac
+UID: 905-111-606
+
+Pexex Lab
+
+To enter the debugger gdb with the specified executable emacs-26.3, I executed the following command:
+
+$ gdb ~eggert/bin64/bin/emacs-26.3
+
+Setting a breakpoint at the function Ftimes by executing:
+
+(gdb) b Ftimes
+
+Output:
+Breakpoint 1 at 0x54ddd0: file ../../emacs-26.3/src/data.c, line 2950.
+
+Running the command $ emacs -Q -batch -eval '(print (* 1250284240 -1844255039))' which is a function to multiply numbers with Emacs from the shell, I run it in gdb using the following command:
+
+(gdb) r -Q -batch -eval '(print (* 1250284240 -1844255039))'
+
+Output:
+Starting program: /w/fac.2/cs/eggert/bin64/bin/emacs-26.3 -Q -batch -eval '(print (* 1250284240 -1844255039))'
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+[New Thread 0x7fffe35bb700 (LWP 30769)]
+
+Thread 1 "emacs-26.3" hit Breakpoint 1, Ftimes (nargs=2, args=0x7fffffffc700)
+    at ../../emacs-26.3/src/data.c:2950
+2950	  return arith_driver (Amult, nargs, args);
+
+To access the assembly code of the program, I execute:
+
+(gdb) layout asm
+
+To display registers values and to observe the changes after every command line, I execute:
+
+(gdb) layout regs
+
+To display the opcodes of each assembly line with every 'stepi' command, I execute the following:
+
+(gdb) set disassemble-next-line on
+
+(gdb) set logging on
+
+With the provided written script gen-command.sh, I ran the script through gdb. The script is as follows:
+
+# Ignoring paging and asked for pressing c to continue
+echo "set pagination off"
+
+# Set breakpoint
+echo "break Ftimes"
+
+# Turn color characters like [34 off in our output
+echo "set style enabled off"
+
+# Start running the program
+echo "run -Q -batch -eval '(print (* 1250284240 -1844255039))'"
+
+# Output GDB commands to file 
+echo "set logging on"
+
+# Get the output with opcodes
+echo "set disassemble-next-line on"
+
+# Stepi 250 times
+for i in {1..218}
+do
+    echo "stepi"
+done
+
+#Skip this printf
+echo "nexti"
+
+# Stepi 24 times
+for i in {1..22}
+do
+    echo "stepi"
+done
+echo "nexti"
+
+# Manually edit this file to generate the exact stepi and nexti you need
+# to skip over some unnecessary functions
+
+# Quit without asking
+echo "set confirm off"
+echo "quit"
+
+To run the script and make the gdb-commands.txt file, I executed:
+
+$ chmod u+x gen-commands.sh
+$ ./gen-commands.sh > gdb-commands.txt
+
+I made GDB run the list of commands to create a gdb.txt file with set logging on, I executed, 
+
+$ rm -f gdb.txt 
+$ gdb ~eggert/bin64/bin/emacs-26.3 -x gdb-commands.txt
+ 
+Finally, to re-format the output to follow the spec format, I executed 
+
+$ grep "=>.*" gdb.txt | #Take lines which start with =>
+$ sed "s/=> 0x[0]*\(.*\)/\1/p" | # Start lines with address expect excess zeros
+sed "s/\([0-9abcdef]\)\s<[^>]*>:\s\([0-9abcdef ]*\)\s\([^\t]*\)/\1\t\2\t\3/p" > gdb-formatted.txt
+
+After I generated the gdb-formatted.txt file, I re-entered GDB to start step through each line in the code and observe the changes in the registers values as follows:
+
+$ gdb ~eggert/bin64/bin/emacs-26.3
+
+(gdb) b Ftimes
+(gdb) r -Q -batch -eval '(print (* 1250284240 -1844255039))'
+(gdb) layout asm
+(gdb) layout regs
+(gdb) set disassemble-next-line on
+
+And repetitively step through each line of code using:
+ 
+(gdb) stepi

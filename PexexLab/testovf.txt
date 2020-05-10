@@ -1,0 +1,18 @@
+Name: Anh Mac
+UID: 905-111-606
+
+1. The option -O2 generates assembly code that will always return false with the instruction:
+   xorl	      %eax, %eax
+   Since this instruction results in 0 in %rax, which is the return register. With the expression provided in the function, any number n + a number will always be greater than itself, so the function should automatically returns false. The compiler option optimizes the code to do this without consideration of the value passed as n.
+
+2. The option -O2 -fwrapv generates assembly code that will compute the calculation "n + 9223372036854775807" since the -fwrapv option optimizes the code so that overflow is wrapped around the generate a negative number as 9223372036854775807 is much larger than TMAX. The assembly code shows this calculation with:
+   movabsq     $9223372036854775807, %rax                                      
+   addq	       %rdi, %rax
+   and it will compare with the original value of n as stored in %rdi and returns the Boolean value of whether the expression is true or not. If n > 0, overflow will occur and the sum will output a negative value, so the function will return 1. In all other cases, the function will return 0.
+
+3. The option -O2 -fsanitize=undefined is used to detect undefined behavior in the program during the compiling process. In the assembly code of this function, after the instruction that performs the expression with:
+   addq %rdx, %rbp
+   jo	.L6
+.L6:
+   call	__ubsan_handle_add_overflow
+   In this code, %rdi stores 9223372036854775807 and %rbp stores n. When adding them together with the "addq" instruction, if overflow occurs, the program jumped to call the "__ubsan_handle_add_overflow" function, and an error will be produced as overflow is undefined behavior. However, after the undefined behavior is handled, the program jumped back to .L2 where the expression can be compared and produces the output similar to -O2 -fwrapv. The only difference between #2 and #3 is that the overflow error is handled before the comparison is executed.
