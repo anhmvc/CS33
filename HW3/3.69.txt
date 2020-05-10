@@ -1,0 +1,74 @@
+Name: Anh Mac
+UID: 905-111-606
+
+3.69
+
+typedef struct {
+	int first;
+	a_struct a[CNT];
+	int last;
+} b_struct;
+
+void test(long i, b_struct *bp)
+{
+	int n = bp->first + bp->last;
+	a_struct *ap = &bp->a[i];
+	ap->x[ap->idx] = n;
+}
+
+void test(long i, b_struct *bp)
+i in %rdi, bp in %rsi
+
+<test>:
+	// int n = bp->first + bp->last;
+	// n in %ecx
+0:	8b 8e 20 01 00 00	mov	0x120(%rsi),%ecx	// n = bp->last (bp+0x120 or bp+288)
+6:	03 0e			add	(%rsi),%ecx		// n = bp->last + bp->first (bp)
+
+	// a_struct *ap = &bp->a[i]
+8:	48 8d 04 bf		lea	(%rdi,%rdi,4),%rax	// rax = i+4i = 5i
+c:	48 8d 04 c6		lea	(%rsi,%rax,8),%rax	// rax = bp+8(5i) = bp+40i
+10:	48 8b 50 08		mov	0x8(%rax),%rdx		// rdx = bp+40i+0x8 = bp+40i+8
+								// rdx saves value of idx
+
+	// ap->x[ap->idx] = n
+14:	48 63 c9		movslq	%ecx,%rcx		// n sign extension from int (4 bytes) to long (8 bytes)
+17:	48 89 4c d0 10		mov	%rcx,0x10(%rax,%rdx,8)  // 0x10+bp+40i+8(bp+40i+8) = bp+40i+16+8(bp+40i+8) = n
+1c:	c3			retq
+
+
+// *ap points to the ith element of a[CNT]
+
+bp     bp+8		    bp+40i+8=bp+288
+-----------------------------------------------
+| first | a[0] | a[1] | ... | a[CNT-1] | last |
+-----------------------------------------------
+
+
+A. The value of CNT
+The size of each element in bp->a is 40 bytes as the assembly code reads out 40i, meaning there are i elements, and each element is 40 bytes.
+The +8 in the expression rdx = bp+40i+0x8 means to skip int first in b_struct.
+
+i = CNT
+bp+40i+8 = bp+288
+40i+8 = 288
+40i = 280
+i = 7
+
+The value of CNT is 7.
+
+B. From part A, a_struct has a size of 40 and alignment of 8 from the expression rdx = bp+40i+0x8.
+rdx saves value of idx, so idx is the first value in a_struct
+In the mov instruction at byte 17, rdx*8, that means size of idx is 8 bytes -> long
+Second element in a_struct has to be an array of elements of 8 bytes because bp+40i+0x10 = bp+40i+16 = bp+40i+8*2, so x is an array of longs.
+
+a has size 40, and alignment of 8. 
+sizeof(a_struct) = sizeof(idx) + i*sizeof(x[0])
+40 = 8 + 8*i
+32 = 8*i
+i = 4
+
+typedef struct {
+	long idx;
+	long x[4];
+} a_struct;

@@ -1,0 +1,77 @@
+Name: Anh Mac
+UID: 905-111-606
+
+3.72
+
+#include <alloca.h>
+
+long aframe(long n, long idx, long *q) {
+	long i;
+	long **p = alloca(n * sizeof(long *));
+	p[0] = &i;
+	for (i = 1; i < n; i++)
+	    p[i] = q;
+	return *p[idx];
+}
+
+
+1 aframe:
+2	pushq	%rbp
+3	movq	%rsp, %rbp
+4	subq	$16,%rsp		// allocate space for i (%rsp = s1)
+5	leaq	30(,%rdi,8),%rax	// rax = 8n+30
+6	andq	$-16,%rax		// rax = rax & -16 --- rounded 8n+30 to the nearest multiple of 16
+7	subq	%rax,%rsp		// allocate space for array p (%rsp = s2)
+8	leaq	15(%rsp),%r8		// $r8 = rsp+15
+9	andq	$-16, %r8		// set %r8 to &p[0]
+	.
+	.
+	.
+
+Extra space e2 may arise between s2 and p, and extra space e1 may arise between the end of array p and s1.
+
+A. Explain, in mathematical terms, the logic in the computation of s2.
+The leaq instruction of line 5 computes the value of 8n+30, which is then rounded down to the nearest multiple of 16 by the andq instruction of line 6. The resulting value will be 8n+16 when n is even and 8n+24 when n is odd, and this value is subtracted from s1 to get s2.
+
+B. Explain, in mathematical terms, the logic in the computation of p.
+The instruction in line 8 round s2 up to the nearest multiple of 16 by adding 15, which is represented as 0000...00001111 in binary.
+
+C. Find values of n and s1 that lead to minimum and maximum values of e1.
+When n is even, s2=8n+16
+	and e1+e2 == 16,
+
+	e1 will be the minimum value of 1 when e2 == 15.
+	e2 == 15 when p-s2 == 15. According to the mathematical logic of how p is computed, p has to be a value that is a multiple of 16. Choosing an arbitrary value for p as 160, provided p-e2=s2, we get
+		p-15=s2
+		160-15=145
+Choose an arbitrary even value for n, which is 4, we can compute s1 by doing 
+		s1-(8n+16)=s2
+		s1-(8*4+16)=145
+		s1=145+(8*4+16)
+		s1=193
+
+	So for e1 to be its minimum value, the expression s1mod16 == 1 must be satisfied.
+
+When n is odd, s2=8n+24
+	and e1+e2 == 24, 
+
+	e1 will be the maximum value of 24 when e2 == 0.
+	e2 == 0 when s2 == p, so since p is calculated by rounding s2 up to the nearest multiple of 16, then s2 should follow s2mod16 == 0. And to satisfy that expression, 
+
+	s2 == p == multiple of 16
+	s1-s2=p
+	s1-(multiple of 16) == multiple of 16
+	s1 == multiple of 16
+
+	so s1 also has to be a multiple of 16, and the expression s1mod16 == 0 holds true. So e1 is its maximum value when s1 is a multiple of 16. An example is when n = 3 and s1 = 176.
+
+	So for e1 to be its maximum value, the expression s1mod16 == 0 must be satisfied.
+
+n	s1	s2	p	e1	e2
+------------------------------------------
+3	176	128	128	24	 0
+4	193	145	160	 1	15
+
+
+D. What alignment properties does this code guarantee for the values of s2 and p?
+s2 is computed in a way that preserves whatever offset s1 has with the nearest multiple of 16. We also see that p will be aligned on a multiple of 16, as it rounds up the value of s2 to the nearest multiple of 16.

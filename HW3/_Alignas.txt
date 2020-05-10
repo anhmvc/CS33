@@ -1,0 +1,12 @@
+Name: Anh Mac
+UID: 905-111-606
+
+sizeof(struct {
+		short a;
+		char _Alignas (8) b;
+		char c;
+	})
+
+This expression would return 2 (short) + 6 (padding) + 8 (char _Alignas (8) + 1 (char) + 7 (padding) = 24. It would require 13 bytes of padding (between a & b and after c) as every element has to follow the alignment of the largest data type in this struct, which is 8 due to the _Alignas function which made b to has alignment of 8 instead of its usual 1 bytes as char.
+
+If I were to change 'struct' to 'union', the sizeof() expression would return 8 because every element in a union has offset 0, and the size is simply the alignment of the largest data type, which is 8.
