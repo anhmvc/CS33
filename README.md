@@ -10,7 +10,7 @@ Assignments | Grade
 Datalab | 33/33
 Pexex Lab | 95/100
 Smashing Lab | 99/100
-Open MP Lab | 100/100
+OpenMP Lab | 100/100
 HW 1 | 9.48/10
 HW 2 | 6.8/10
 HW 3 | 9.5/10
